@@ -1,7 +1,18 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import type { Game, Pricing } from "@/lib/types";
+
+function useIsDesktop() {
+  const [isDesktop, setIsDesktop] = useState<boolean | null>(null);
+  useEffect(() => {
+    const check = () => setIsDesktop(window.innerWidth >= 1024);
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isDesktop; // null = SSR, true/false = client
+}
 
 interface Props {
   game: Game;
@@ -20,7 +31,7 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
   const [noteColor, setNoteColor] = useState("");
   const [showBottomBar, setShowBottomBar] = useState(false);
   const [showQris, setShowQris] = useState(false);
-  const [mounted, setMounted] = useState(false);
+  const isDesktop = useIsDesktop();
 
   const currencyLabel = game.slug.includes("pubg")
     ? "UC"
@@ -31,15 +42,6 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
         : "Diamond";
 
   const fmt = (n: number) => "Rp" + n.toLocaleString("id-ID");
-
-  // Determine desktop AFTER mount to avoid SSR mismatch
-  const isDesktop = mounted
-    ? typeof window !== "undefined" && window.innerWidth >= 1024
-    : false;
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
 
   useEffect(() => {
     const handleScroll = () => setShowBottomBar(window.scrollY > 300);
@@ -188,7 +190,7 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
       )}
 
       {/* ===== MOBILE: Hot-Pot Product Detail ===== */}
-      <div className="lg:hidden">
+      {isDesktop === false && (<>
         {/* Hero Image */}
         <div className="relative bg-gradient-to-b from-[#111] to-[#0A0A0A] border-b border-white/10">
           <div className="flex items-center justify-center py-10">
@@ -316,10 +318,10 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
             </button>
           </div>
         </div>
-      </div>
+      </>)}
 
       {/* ===== DESKTOP ===== */}
-      <div className="hidden lg:block">
+      {isDesktop === true && (<>
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
           <div className="glass rounded-3xl p-8 flex items-center gap-8">
             <img
@@ -471,7 +473,7 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
             )}
           </aside>
         </section>
-      </div>
+      </>)}
     </>
   );
 }
