@@ -80,44 +80,41 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
     <>
       {/* ===== QRIS MODAL ===== */}
       {showQris && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[100]">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/70 backdrop-blur-sm"
             onClick={() => setShowQris(false)}
           />
-          {/* Modal */}
-          <div className="relative w-full max-w-md bg-[#111] rounded-3xl border border-white/10 overflow-hidden animate-in fade-in zoom-in duration-200">
+
+          {/* Mobile: Bottom Sheet */}
+          <div className="lg:hidden absolute bottom-0 inset-x-0 bg-[#111] rounded-t-3xl border-t border-white/10 max-h-[92vh] overflow-y-auto animate-in slide-in-from-bottom duration-300">
+            {/* Handle */}
+            <div className="flex justify-center pt-3 pb-1">
+              <div className="h-1 w-10 rounded-full bg-white/20" />
+            </div>
+
             {/* Header */}
-            <div className="relative px-6 pt-8 pb-4 text-center">
+            <div className="px-5 pt-2 pb-3 flex items-center justify-between">
+              <div>
+                <h2 className="font-['Archivo'] text-lg font-bold">Pembayaran QRIS</h2>
+                <p className="text-xs text-[#9C9791]">Scan untuk bayar</p>
+              </div>
               <button
                 onClick={() => setShowQris(false)}
-                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-[#9C9791] hover:text-white transition"
+                className="h-9 w-9 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-[#9C9791] hover:text-white transition"
               >
                 ✕
               </button>
-              <div className="h-12 w-12 rounded-2xl bg-green-500/15 border border-green-500/30 grid place-items-center mx-auto mb-4">
-                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 6 9 17l-5-5" />
-                </svg>
-              </div>
-              <h2 className="font-['Archivo'] text-xl font-bold">Pembayaran QRIS</h2>
-              <p className="mt-1.5 text-sm text-[#9C9791]">
-                Scan kode QR di bawah untuk menyelesaikan pembayaran
-              </p>
             </div>
 
             {/* QRIS Image */}
-            <div className="px-6 pb-4">
-              <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
+            <div className="px-5">
+              <div className="bg-white rounded-2xl p-3 flex items-center justify-center">
                 {qrisUrl ? (
-                  <img
-                    src={qrisUrl}
-                    alt="QRIS Code"
-                    className="w-full max-h-72 object-contain"
-                  />
+                  <img src={qrisUrl} alt="QRIS" className="w-full max-h-64 object-contain" />
                 ) : (
-                  <div className="w-full h-64 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                  <div className="w-full h-48 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
                     QRIS belum diupload
                   </div>
                 )}
@@ -125,8 +122,8 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
             </div>
 
             {/* Order Summary */}
-            <div className="px-6 pb-6">
-              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-2.5">
+            <div className="px-5 py-4">
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-2">
                 <div className="flex justify-between text-sm">
                   <span className="text-[#9C9791]">Game</span>
                   <span className="font-semibold">{game.name}</span>
@@ -145,28 +142,91 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
                   <span className="text-[#9C9791]">Nominal</span>
                   <span className="font-semibold">{selected?.nominal_label || "\u2014"}</span>
                 </div>
-                <div className="flex justify-between text-sm pt-2.5 border-t border-white/10">
+                <div className="flex justify-between text-sm pt-2 border-t border-white/10">
                   <span className="text-[#9C9791]">Total Bayar</span>
                   <span className="font-['Archivo'] text-lg font-bold text-[#FF6A00]">
                     {selected ? fmt(selected.price) : "Rp0"}
                   </span>
                 </div>
               </div>
-
-              <div className="mt-4 text-center">
-                <p className="text-xs text-[#9C9791] leading-relaxed">
-                  Setelah transfer, pesanan akan diproses otomatis.
-                  <br />
-                  Simpan bukti transfer sebagai bukti pembayaran.
-                </p>
-              </div>
-
+              <p className="mt-3 text-[11px] text-[#9C9791] text-center leading-relaxed">
+                Setelah transfer, pesanan diproses otomatis. Simpan bukti transfer.
+              </p>
               <button
                 onClick={() => setShowQris(false)}
-                className="mt-5 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition"
+                className="mt-4 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition"
               >
                 Tutup
               </button>
+            </div>
+          </div>
+
+          {/* Desktop: Centered Modal */}
+          <div className="hidden lg:flex absolute inset-0 items-center justify-center p-4">
+            <div className="relative w-full max-w-md bg-[#111] rounded-3xl border border-white/10 overflow-hidden">
+              <div className="relative px-6 pt-8 pb-4 text-center">
+                <button
+                  onClick={() => setShowQris(false)}
+                  className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-[#9C9791] hover:text-white transition"
+                >
+                  ✕
+                </button>
+                <div className="h-12 w-12 rounded-2xl bg-green-500/15 border border-green-500/30 grid place-items-center mx-auto mb-4">
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M20 6 9 17l-5-5" />
+                  </svg>
+                </div>
+                <h2 className="font-['Archivo'] text-xl font-bold">Pembayaran QRIS</h2>
+                <p className="mt-1.5 text-sm text-[#9C9791]">Scan kode QR untuk menyelesaikan pembayaran</p>
+              </div>
+              <div className="px-6 pb-4">
+                <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
+                  {qrisUrl ? (
+                    <img src={qrisUrl} alt="QRIS" className="w-full max-h-72 object-contain" />
+                  ) : (
+                    <div className="w-full h-64 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                      QRIS belum diupload
+                    </div>
+                  )}
+                </div>
+              </div>
+              <div className="px-6 pb-6">
+                <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-2.5">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#9C9791]">Game</span>
+                    <span className="font-semibold">{game.name}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#9C9791]">{game.user_id_label}</span>
+                    <span className="font-semibold">{userId || "\u2014"}</span>
+                  </div>
+                  {!game.hide_server_id && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-[#9C9791]">{game.server_id_label}</span>
+                      <span className="font-semibold">{serverId || "\u2014"}</span>
+                    </div>
+                  )}
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#9C9791]">Nominal</span>
+                    <span className="font-semibold">{selected?.nominal_label || "\u2014"}</span>
+                  </div>
+                  <div className="flex justify-between text-sm pt-2.5 border-t border-white/10">
+                    <span className="text-[#9C9791]">Total Bayar</span>
+                    <span className="font-['Archivo'] text-lg font-bold text-[#FF6A00]">
+                      {selected ? fmt(selected.price) : "Rp0"}
+                    </span>
+                  </div>
+                </div>
+                <p className="mt-4 text-xs text-[#9C9791] text-center leading-relaxed">
+                  Setelah transfer, pesanan akan diproses otomatis. Simpan bukti transfer sebagai bukti pembayaran.
+                </p>
+                <button
+                  onClick={() => setShowQris(false)}
+                  className="mt-5 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition"
+                >
+                  Tutup
+                </button>
+              </div>
             </div>
           </div>
         </div>
@@ -248,7 +308,7 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
         </div>
 
         {/* Nominal Picker */}
-        <div className="px-4 mt-4 pb-28">
+        <div className="px-4 mt-4 pb-32">
           <div className="glass rounded-2xl p-4">
             <p className="text-xs font-bold tracking-widest text-[#9C9791] mb-3">
               LANGKAH 2 — PILIH NOMINAL
