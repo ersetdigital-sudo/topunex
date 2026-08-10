@@ -58,16 +58,17 @@ export default async function TopUpPage({ params }: Props) {
 
   const { data: settings } = await supabase
     .from("settings")
-    .select("value")
-    .eq("key", "qris_image_url")
-    .single();
+    .select("key, value")
+    .in("key", ["qris_image_url", "wa_number"]);
 
   const gameData = game as Game;
   const pricingList = (pricing || []) as Pricing[];
   const otherGames = ((allGames || []) as Game[]).filter(
     (g) => g.id !== gameData.id
   );
-  const qrisUrl = settings?.value || "";
+  const settingsMap = Object.fromEntries((settings || []).map((s) => [s.key, s.value]));
+  const qrisUrl = settingsMap.qris_image_url || "";
+  const waNumber = settingsMap.wa_number || "";
 
   return (
     <>
@@ -83,7 +84,7 @@ export default async function TopUpPage({ params }: Props) {
           />
         </div>
       </div>
-      <TopUpClient game={gameData} pricing={pricingList} qrisUrl={qrisUrl} />
+      <TopUpClient game={gameData} pricing={pricingList} qrisUrl={qrisUrl} waNumber={waNumber} />
       <div className="hidden sm:block">
         <Footer games={otherGames} />
       </div>

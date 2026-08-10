@@ -7,9 +7,10 @@ interface Props {
   game: Game;
   pricing: Pricing[];
   qrisUrl: string;
+  waNumber: string;
 }
 
-export function TopUpClient({ game, pricing, qrisUrl }: Props) {
+export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
   const [userId, setUserId] = useState("");
   const [serverId, setServerId] = useState("");
   const [selected, setSelected] = useState<Pricing | null>(
@@ -19,7 +20,7 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
   const [noteColor, setNoteColor] = useState("");
   const [showBottomBar, setShowBottomBar] = useState(false);
   const [showQris, setShowQris] = useState(false);
-  const [isDesktop, setIsDesktop] = useState(false);
+  const [mounted, setMounted] = useState(false);
 
   const currencyLabel = game.slug.includes("pubg")
     ? "UC"
@@ -31,11 +32,13 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
 
   const fmt = (n: number) => "Rp" + n.toLocaleString("id-ID");
 
+  // Determine desktop AFTER mount to avoid SSR mismatch
+  const isDesktop = mounted
+    ? typeof window !== "undefined" && window.innerWidth >= 1024
+    : false;
+
   useEffect(() => {
-    const check = () => setIsDesktop(window.innerWidth >= 1024);
-    check();
-    window.addEventListener("resize", check);
-    return () => window.removeEventListener("resize", check);
+    setMounted(true);
   }, []);
 
   useEffect(() => {
@@ -52,16 +55,25 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
   }, [showQris]);
 
   const handlePay = () => {
-    if (!userId.trim() || (!game.hide_server_id && !serverId.trim())) {
-      setNote(
-        game.hide_server_id
-          ? "Lengkapi User ID dulu ya."
-          : "Lengkapi User ID dan Zone ID dulu ya."
-      );
+    if (!userId.trim()) {
+      setNote("User ID wajib diisi.");
+      setNoteColor("#FF6A00");
+      return;
+    }
+    if (!game.hide_server_id && !serverId.trim()) {
+      setNote(`${game.server_id_label} wajib diisi.`);
       setNoteColor("#FF6A00");
       return;
     }
     setShowQris(true);
+  };
+
+  const handleWhatsApp = () => {
+    if (!waNumber) return;
+    const msg = encodeURIComponent(
+      `Halo, saya ingin konfirmasi pembayaran top up ${game.name}.\n\nUser ID: ${userId}${!game.hide_server_id ? `\n${game.server_id_label}: ${serverId}` : ""}\nNominal: ${selected?.nominal_label || "-"}\nTotal: ${selected ? fmt(selected.price) : "Rp0"}`
+    );
+    window.open(`https://wa.me/${waNumber}?text=${msg}`, "_blank");
   };
 
   const description =
@@ -130,7 +142,13 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
                     <div className="flex justify-between text-sm pt-2.5 border-t border-white/10"><span className="text-[#9C9791]">Total Bayar</span><span className="font-['Archivo'] text-lg font-bold text-[#FF6A00]">{selected ? fmt(selected.price) : "Rp0"}</span></div>
                   </div>
                   <p className="mt-4 text-xs text-[#9C9791] text-center leading-relaxed">Setelah transfer, pesanan diproses otomatis. Simpan bukti transfer.</p>
-                  <button onClick={() => setShowQris(false)} className="mt-5 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition">Tutup</button>
+                  {waNumber && (
+                    <button onClick={handleWhatsApp} className="mt-4 w-full rounded-2xl bg-green-600 hover:bg-green-500 text-white py-3 text-sm font-bold transition flex items-center justify-center gap-2">
+                      <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                      Konfirmasi via WhatsApp
+                    </button>
+                  )}
+                  <button onClick={() => setShowQris(false)} className="mt-3 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition">Tutup</button>
                 </div>
               </div>
             </div>
@@ -156,7 +174,13 @@ export function TopUpClient({ game, pricing, qrisUrl }: Props) {
                   <div className="flex justify-between text-sm pt-2 border-t border-white/10"><span className="text-[#9C9791]">Total Bayar</span><span className="font-['Archivo'] text-lg font-bold text-[#FF6A00]">{selected ? fmt(selected.price) : "Rp0"}</span></div>
                 </div>
                 <p className="mt-3 text-[11px] text-[#9C9791] text-center leading-relaxed">Setelah transfer, pesanan diproses otomatis. Simpan bukti transfer.</p>
-                <button onClick={() => setShowQris(false)} className="mt-4 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition">Tutup</button>
+                {waNumber && (
+                  <button onClick={handleWhatsApp} className="mt-3 w-full rounded-2xl bg-green-600 hover:bg-green-500 text-white py-3 text-sm font-bold transition flex items-center justify-center gap-2">
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+                    Konfirmasi via WhatsApp
+                  </button>
+                )}
+                <button onClick={() => setShowQris(false)} className="mt-3 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition">Tutup</button>
               </div>
             </div>
           )}
