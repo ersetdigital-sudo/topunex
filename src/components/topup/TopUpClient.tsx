@@ -31,6 +31,7 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
   const [noteColor, setNoteColor] = useState("");
   const [showBottomBar, setShowBottomBar] = useState(false);
   const [showQris, setShowQris] = useState(false);
+  const [timer, setTimer] = useState(0);
   const isDesktop = useIsDesktop();
 
   const currencyLabel = game.slug.includes("pubg")
@@ -49,12 +50,38 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // Lock body scroll when modal open
+  // Lock body scroll when modal open + timer
   useEffect(() => {
-    if (showQris) document.body.style.overflow = "hidden";
-    else document.body.style.overflow = "";
+    if (showQris) {
+      document.body.style.overflow = "hidden";
+      setTimer(300); // 5 minutes
+    } else {
+      document.body.style.overflow = "";
+      setTimer(0);
+    }
     return () => { document.body.style.overflow = ""; };
   }, [showQris]);
+
+  // Countdown timer
+  useEffect(() => {
+    if (timer <= 0) return;
+    const interval = setInterval(() => {
+      setTimer((t) => {
+        if (t <= 1) {
+          setShowQris(false);
+          return 0;
+        }
+        return t - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [timer > 0]);
+
+  const formatTime = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m.toString().padStart(2, "0")}:${sec.toString().padStart(2, "0")}`;
+  };
 
   const handlePay = () => {
     if (!userId.trim()) {
@@ -118,6 +145,17 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
               >
                 <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
               </button>
+
+              {/* Timer */}
+              {timer > 0 && (
+                <div className={`absolute top-4 left-4 flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold ${
+                  timer <= 60 ? "bg-red-500/15 text-red-400 animate-pulse" : "bg-[#FF6A00]/15 text-[#FF6A00]"
+                }`}>
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+                  {formatTime(timer)}
+                </div>
+              )}
+
               <div className="h-10 w-10 rounded-xl bg-green-500/15 border border-green-500/30 grid place-items-center mx-auto mb-3">
                 <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M20 6 9 17l-5-5" /></svg>
               </div>
@@ -129,7 +167,7 @@ export function TopUpClient({ game, pricing, qrisUrl, waNumber }: Props) {
             <div className="px-5 py-4">
               <div className="bg-white rounded-2xl p-3 flex items-center justify-center">
                 {qrisUrl ? (
-                  <img src={qrisUrl} alt="QRIS" className="w-full max-h-64 object-contain" />
+                  <img src={qrisUrl} alt="QRIS" className="w-auto h-auto max-w-full max-h-64 object-contain" />
                 ) : (
                   <div className="w-full h-48 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">QRIS belum diupload</div>
                 )}
