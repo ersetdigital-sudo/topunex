@@ -104,7 +104,7 @@ export default function AdminLogin() {
               </div>
               <div>
                 <p className="text-sm font-semibold text-white">Admin</p>
-                <p className="text-xs text-white/50">topunex@gmail.com</p>
+                <p className="text-xs text-white/50">Admin</p>
               </div>
             </div>
           </div>
@@ -151,7 +151,7 @@ export default function AdminLogin() {
                 <input
                   id="email"
                   type="email"
-                  placeholder="topunex@gmail.com"
+                  placeholder="email@domain.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   required
