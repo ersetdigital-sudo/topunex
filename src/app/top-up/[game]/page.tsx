@@ -7,6 +7,9 @@ import { Footer } from "@/components/layout/Footer";
 import { Breadcrumb } from "@/components/ui/Breadcrumb";
 import { TopUpClient } from "@/components/topup/TopUpClient";
 
+// Always fetch fresh data from Supabase (no cache)
+export const dynamic = "force-dynamic";
+
 interface Props {
   params: Promise<{ game: string }>;
 }

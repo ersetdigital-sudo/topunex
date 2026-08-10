@@ -14,6 +14,9 @@ import { FAQSection } from "@/components/landing/FAQSection";
 import { CTABanner } from "@/components/landing/CTABanner";
 import { StickyCTA } from "@/components/layout/StickyCTA";
 
+// Always fetch fresh data from Supabase (no cache)
+export const dynamic = "force-dynamic";
+
 export default async function HomePage() {
   const supabase = await createClient();
 
