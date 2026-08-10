@@ -20,6 +20,7 @@ export async function updateSession(request: NextRequest) {
           cookiesToSet.forEach(({ name, value }) =>
             request.cookies.set(name, value)
           );
+          // Recreate response with updated cookies
           response = NextResponse.next({
             request: {
               headers: request.headers,
@@ -33,23 +34,20 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
+  // Refresh the session - this is important for cookie rotation
   const {
     data: { user },
+    error,
   } = await supabase.auth.getUser();
 
-  // Protect admin routes
-  if (request.nextUrl.pathname.startsWith("/admin")) {
-    if (request.nextUrl.pathname === "/admin/login") {
-      if (user) {
-        return NextResponse.redirect(new URL("/admin", request.url));
-      }
-      return response;
-    }
+  const pathname = request.nextUrl.pathname;
 
+  // Only protect non-login admin routes
+  if (pathname.startsWith("/admin") && pathname !== "/admin/login") {
     if (!user) {
-      const loginUrl = new URL("/admin/login", request.url);
-      loginUrl.searchParams.set("redirectedFrom", request.nextUrl.pathname);
-      return NextResponse.redirect(loginUrl);
+      const url = request.nextUrl.clone();
+      url.pathname = "/admin/login";
+      return NextResponse.redirect(url);
     }
   }
 
