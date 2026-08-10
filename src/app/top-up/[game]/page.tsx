@@ -53,11 +53,18 @@ export default async function TopUpPage({ params }: Props) {
     .eq("is_active", true)
     .order("sort_order");
 
+  const { data: settings } = await supabase
+    .from("settings")
+    .select("value")
+    .eq("key", "qris_image_url")
+    .single();
+
   const gameData = game as Game;
   const pricingList = (pricing || []) as Pricing[];
   const otherGames = ((allGames || []) as Game[]).filter(
     (g) => g.id !== gameData.id
   );
+  const qrisUrl = settings?.value || "";
 
   return (
     <>
@@ -73,7 +80,7 @@ export default async function TopUpPage({ params }: Props) {
           />
         </div>
       </div>
-      <TopUpClient game={gameData} pricing={pricingList} />
+      <TopUpClient game={gameData} pricing={pricingList} qrisUrl={qrisUrl} />
       <div className="hidden sm:block">
         <Footer games={otherGames} />
       </div>

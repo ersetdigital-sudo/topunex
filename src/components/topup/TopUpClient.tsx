@@ -2,15 +2,14 @@
 
 import { useState, useEffect } from "react";
 import type { Game, Pricing } from "@/lib/types";
-import { PAYMENT_METHODS } from "@/lib/constants";
-import { OtherGames } from "./OtherGames";
 
 interface Props {
   game: Game;
   pricing: Pricing[];
+  qrisUrl: string;
 }
 
-export function TopUpClient({ game, pricing }: Props) {
+export function TopUpClient({ game, pricing, qrisUrl }: Props) {
   const [userId, setUserId] = useState("");
   const [serverId, setServerId] = useState("");
   const [selected, setSelected] = useState<Pricing | null>(
@@ -19,6 +18,7 @@ export function TopUpClient({ game, pricing }: Props) {
   const [note, setNote] = useState("");
   const [noteColor, setNoteColor] = useState("");
   const [showBottomBar, setShowBottomBar] = useState(false);
+  const [showQris, setShowQris] = useState(false);
 
   const currencyLabel = game.slug.includes("pubg")
     ? "UC"
@@ -30,16 +30,20 @@ export function TopUpClient({ game, pricing }: Props) {
 
   const fmt = (n: number) => "Rp" + n.toLocaleString("id-ID");
 
-  // Show bottom bar after scrolling past the nominal section
   useEffect(() => {
-    const handleScroll = () => {
-      setShowBottomBar(window.scrollY > 300);
-    };
+    const handleScroll = () => setShowBottomBar(window.scrollY > 300);
     window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  const handleBuy = () => {
+  // Lock body scroll when modal open
+  useEffect(() => {
+    if (showQris) document.body.style.overflow = "hidden";
+    else document.body.style.overflow = "";
+    return () => { document.body.style.overflow = ""; };
+  }, [showQris]);
+
+  const handlePay = () => {
     if (!userId.trim() || (!game.hide_server_id && !serverId.trim())) {
       setNote(
         game.hide_server_id
@@ -49,8 +53,7 @@ export function TopUpClient({ game, pricing }: Props) {
       setNoteColor("#FF6A00");
       return;
     }
-    setNoteColor("");
-    setNote("Pesanan siap. Hubungkan metode pembayaran untuk melanjutkan.");
+    setShowQris(true);
   };
 
   const description =
@@ -75,7 +78,101 @@ export function TopUpClient({ game, pricing }: Props) {
 
   return (
     <>
-      {/* Mobile: Hot-Pot Product Detail Style */}
+      {/* ===== QRIS MODAL ===== */}
+      {showQris && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          {/* Backdrop */}
+          <div
+            className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+            onClick={() => setShowQris(false)}
+          />
+          {/* Modal */}
+          <div className="relative w-full max-w-md bg-[#111] rounded-3xl border border-white/10 overflow-hidden animate-in fade-in zoom-in duration-200">
+            {/* Header */}
+            <div className="relative px-6 pt-8 pb-4 text-center">
+              <button
+                onClick={() => setShowQris(false)}
+                className="absolute top-4 right-4 h-8 w-8 rounded-full bg-white/5 hover:bg-white/10 grid place-items-center text-[#9C9791] hover:text-white transition"
+              >
+                ✕
+              </button>
+              <div className="h-12 w-12 rounded-2xl bg-green-500/15 border border-green-500/30 grid place-items-center mx-auto mb-4">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 6 9 17l-5-5" />
+                </svg>
+              </div>
+              <h2 className="font-['Archivo'] text-xl font-bold">Pembayaran QRIS</h2>
+              <p className="mt-1.5 text-sm text-[#9C9791]">
+                Scan kode QR di bawah untuk menyelesaikan pembayaran
+              </p>
+            </div>
+
+            {/* QRIS Image */}
+            <div className="px-6 pb-4">
+              <div className="bg-white rounded-2xl p-4 flex items-center justify-center">
+                {qrisUrl ? (
+                  <img
+                    src={qrisUrl}
+                    alt="QRIS Code"
+                    className="w-full max-h-72 object-contain"
+                  />
+                ) : (
+                  <div className="w-full h-64 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 text-sm">
+                    QRIS belum diupload
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Order Summary */}
+            <div className="px-6 pb-6">
+              <div className="bg-white/[0.03] border border-white/10 rounded-2xl p-4 space-y-2.5">
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#9C9791]">Game</span>
+                  <span className="font-semibold">{game.name}</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#9C9791]">{game.user_id_label}</span>
+                  <span className="font-semibold">{userId || "\u2014"}</span>
+                </div>
+                {!game.hide_server_id && (
+                  <div className="flex justify-between text-sm">
+                    <span className="text-[#9C9791]">{game.server_id_label}</span>
+                    <span className="font-semibold">{serverId || "\u2014"}</span>
+                  </div>
+                )}
+                <div className="flex justify-between text-sm">
+                  <span className="text-[#9C9791]">Nominal</span>
+                  <span className="font-semibold">{selected?.nominal_label || "\u2014"}</span>
+                </div>
+                <div className="flex justify-between text-sm pt-2.5 border-t border-white/10">
+                  <span className="text-[#9C9791]">Total Bayar</span>
+                  <span className="font-['Archivo'] text-lg font-bold text-[#FF6A00]">
+                    {selected ? fmt(selected.price) : "Rp0"}
+                  </span>
+                </div>
+              </div>
+
+              <div className="mt-4 text-center">
+                <p className="text-xs text-[#9C9791] leading-relaxed">
+                  Setelah transfer, pesanan akan diproses otomatis.
+                  <br />
+                  Simpan bukti transfer sebagai bukti pembayaran.
+                </p>
+              </div>
+
+              <button
+                onClick={() => setShowQris(false)}
+                className="mt-5 w-full rounded-2xl border border-white/10 py-3 text-sm font-semibold text-[#9C9791] hover:text-white hover:border-white/20 transition"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ===== MOBILE: Hot-Pot Product Detail ===== */}
       <div className="lg:hidden">
         {/* Hero Image */}
         <div className="relative bg-gradient-to-b from-[#111] to-[#0A0A0A] border-b border-white/10">
@@ -84,9 +181,7 @@ export function TopUpClient({ game, pricing }: Props) {
               src={game.icon_url}
               alt={game.name}
               className={`h-32 w-32 rounded-3xl object-cover border border-white/10 shadow-2xl ${
-                game.slug === "call-of-duty-mobile"
-                  ? "object-contain logo-plate"
-                  : ""
+                game.slug === "call-of-duty-mobile" ? "object-contain logo-plate" : ""
               }`}
             />
           </div>
@@ -109,9 +204,7 @@ export function TopUpClient({ game, pricing }: Props) {
             </div>
           </div>
           <h1 className="text-2xl font-bold font-['Archivo']">{game.name}</h1>
-          <p className="mt-2 text-sm text-[#9C9791] leading-relaxed">
-            {description}
-          </p>
+          <p className="mt-2 text-sm text-[#9C9791] leading-relaxed">{description}</p>
         </div>
 
         {/* User ID Input */}
@@ -122,14 +215,11 @@ export function TopUpClient({ game, pricing }: Props) {
             </p>
             <div className="space-y-3">
               <div>
-                <label
-                  htmlFor="uid-mobile"
-                  className="text-[11px] font-semibold text-[#9C9791] block mb-1.5"
-                >
+                <label htmlFor="uid-m" className="text-[11px] font-semibold text-[#9C9791] block mb-1.5">
                   {game.user_id_label}
                 </label>
                 <input
-                  id="uid-mobile"
+                  id="uid-m"
                   inputMode="numeric"
                   placeholder={game.user_id_placeholder}
                   value={userId}
@@ -139,14 +229,11 @@ export function TopUpClient({ game, pricing }: Props) {
               </div>
               {!game.hide_server_id && (
                 <div>
-                  <label
-                    htmlFor="zone-mobile"
-                    className="text-[11px] font-semibold text-[#9C9791] block mb-1.5"
-                  >
+                  <label htmlFor="zone-m" className="text-[11px] font-semibold text-[#9C9791] block mb-1.5">
                     {game.server_id_label}
                   </label>
                   <input
-                    id="zone-mobile"
+                    id="zone-m"
                     inputMode="numeric"
                     placeholder={game.server_id_placeholder}
                     value={serverId}
@@ -156,14 +243,12 @@ export function TopUpClient({ game, pricing }: Props) {
                 </div>
               )}
             </div>
-            <p className="mt-3 text-[11px] text-[#9C9791] leading-relaxed">
-              {idGuide}
-            </p>
+            <p className="mt-3 text-[11px] text-[#9C9791] leading-relaxed">{idGuide}</p>
           </div>
         </div>
 
         {/* Nominal Picker */}
-        <div className="px-4 mt-4">
+        <div className="px-4 mt-4 pb-28">
           <div className="glass rounded-2xl p-4">
             <p className="text-xs font-bold tracking-widest text-[#9C9791] mb-3">
               LANGKAH 2 — PILIH NOMINAL
@@ -184,12 +269,8 @@ export function TopUpClient({ game, pricing }: Props) {
                       {p.badge === "terlaris" ? "POPULER" : p.badge.toUpperCase()}
                     </span>
                   )}
-                  <p className="text-xs font-bold leading-tight">
-                    {p.nominal_label}
-                  </p>
-                  <p className="mt-1.5 text-[11px] font-semibold text-[#FF6A00]">
-                    {fmt(p.price)}
-                  </p>
+                  <p className="text-xs font-bold leading-tight">{p.nominal_label}</p>
+                  <p className="mt-1.5 text-[11px] font-semibold text-[#FF6A00]">{fmt(p.price)}</p>
                 </button>
               ))}
             </div>
@@ -199,39 +280,10 @@ export function TopUpClient({ game, pricing }: Props) {
           </div>
         </div>
 
-        {/* Payment Methods */}
-        <div className="px-4 mt-4 pb-28">
-          <div className="glass rounded-2xl p-4">
-            <p className="text-xs font-bold tracking-widest text-[#9C9791] mb-3">
-              LANGKAH 3 — BAYAR
-            </p>
-            <div className="grid grid-cols-2 gap-2">
-              {PAYMENT_METHODS.map((m) => (
-                <div
-                  key={m}
-                  className="rounded-xl border border-white/10 px-3 py-2.5 text-center text-xs font-semibold"
-                >
-                  {m}
-                </div>
-              ))}
-            </div>
-          </div>
-          {note && (
-            <p
-              className="mt-3 text-xs text-center px-4"
-              style={{ color: noteColor || "#9C9791" }}
-            >
-              {note}
-            </p>
-          )}
-        </div>
-
-        {/* Fixed Bottom Bar (mobile) */}
+        {/* Fixed Bottom Bar */}
         <div
           className={`fixed bottom-0 inset-x-0 z-50 border-t border-white/10 bg-[#111]/95 backdrop-blur-lg transition-all duration-300 ${
-            showBottomBar
-              ? "translate-y-0 opacity-100"
-              : "translate-y-full opacity-0 pointer-events-none"
+            showBottomBar ? "translate-y-0 opacity-100" : "translate-y-full opacity-0 pointer-events-none"
           }`}
         >
           <div className="px-4 py-3 flex items-center gap-3">
@@ -242,7 +294,7 @@ export function TopUpClient({ game, pricing }: Props) {
               </p>
             </div>
             <button
-              onClick={handleBuy}
+              onClick={handlePay}
               className="btn-primary rounded-xl px-6 py-3 text-sm font-bold whitespace-nowrap"
             >
               Bayar Sekarang
@@ -251,18 +303,15 @@ export function TopUpClient({ game, pricing }: Props) {
         </div>
       </div>
 
-      {/* Desktop: Original Layout */}
+      {/* ===== DESKTOP ===== */}
       <div className="hidden lg:block">
         <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12 sm:py-16">
-          {/* Hero Banner */}
           <div className="glass rounded-3xl p-8 flex items-center gap-8">
             <img
               src={game.icon_url}
               alt={game.name}
               className={`h-24 w-24 rounded-2xl object-cover border border-white/10 ${
-                game.slug === "call-of-duty-mobile"
-                  ? "shrink-0 object-contain logo-plate"
-                  : ""
+                game.slug === "call-of-duty-mobile" ? "shrink-0 object-contain logo-plate" : ""
               }`}
             />
             <div>
@@ -272,56 +321,33 @@ export function TopUpClient({ game, pricing }: Props) {
               <h1 className="mt-3 text-3xl sm:text-5xl font-bold font-['Archivo']">
                 Top Up {game.name}
               </h1>
-              <p className="mt-3 max-w-2xl text-[#9C9791] leading-relaxed">
-                {description}
-              </p>
+              <p className="mt-3 max-w-2xl text-[#9C9791] leading-relaxed">{description}</p>
             </div>
           </div>
-
           <div className="mt-8 flex flex-wrap gap-x-6 gap-y-2 text-sm text-[#9C9791]">
-            <span>
-              <span className="text-[#FF6A00] font-bold">&#10003;</span> Proses
-              otomatis 24/7
-            </span>
-            <span>
-              <span className="text-[#FF6A00] font-bold">&#10003;</span> Tanpa
-              password &amp; OTP
-            </span>
-            <span>
-              <span className="text-[#FF6A00] font-bold">&#10003;</span> QRIS,
-              e-wallet, transfer bank
-            </span>
+            <span><span className="text-[#FF6A00] font-bold">&#10003;</span> Proses otomatis 24/7</span>
+            <span><span className="text-[#FF6A00] font-bold">&#10003;</span> Tanpa password &amp; OTP</span>
           </div>
         </section>
 
-        {/* Desktop Order Grid */}
         <section className="mx-auto max-w-6xl px-4 sm:px-6 pb-16 grid lg:grid-cols-[1fr_340px] gap-8 items-start">
           <div>
             {/* Step 1 */}
             <div className="glass rounded-3xl p-6">
               <div className="flex items-center gap-3">
-                <span className="h-7 w-7 rounded-full bg-[#FF6A00] text-white grid place-items-center text-xs font-bold">
-                  1
-                </span>
+                <span className="h-7 w-7 rounded-full bg-[#FF6A00] text-white grid place-items-center text-xs font-bold">1</span>
                 <h2 className="text-lg font-bold">
                   Masukkan {game.user_id_label}
                   {!game.hide_server_id && ` & ${game.server_id_label}`}
                 </h2>
               </div>
-              <div
-                className={`mt-5 grid gap-4 ${
-                  game.hide_server_id ? "" : "sm:grid-cols-2"
-                }`}
-              >
+              <div className={`mt-5 grid gap-4 ${game.hide_server_id ? "" : "sm:grid-cols-2"}`}>
                 <div>
-                  <label
-                    htmlFor="uid-desktop"
-                    className="text-xs font-semibold tracking-widest text-[#9C9791]"
-                  >
+                  <label htmlFor="uid-d" className="text-xs font-semibold tracking-widest text-[#9C9791]">
                     {game.user_id_label.toUpperCase()}
                   </label>
                   <input
-                    id="uid-desktop"
+                    id="uid-d"
                     inputMode="numeric"
                     placeholder={game.user_id_placeholder}
                     value={userId}
@@ -331,14 +357,11 @@ export function TopUpClient({ game, pricing }: Props) {
                 </div>
                 {!game.hide_server_id && (
                   <div>
-                    <label
-                      htmlFor="zone-desktop"
-                      className="text-xs font-semibold tracking-widest text-[#9C9791]"
-                    >
+                    <label htmlFor="zone-d" className="text-xs font-semibold tracking-widest text-[#9C9791]">
                       {game.server_id_label.toUpperCase()}
                     </label>
                     <input
-                      id="zone-desktop"
+                      id="zone-d"
                       inputMode="numeric"
                       placeholder={game.server_id_placeholder}
                       value={serverId}
@@ -348,20 +371,13 @@ export function TopUpClient({ game, pricing }: Props) {
                   </div>
                 )}
               </div>
-              <p className="mt-4 text-xs text-[#9C9791] leading-relaxed">
-                {idGuide}
-              </p>
+              <p className="mt-4 text-xs text-[#9C9791] leading-relaxed">{idGuide}</p>
             </div>
 
             {/* Step 2 */}
-            <div
-              id="nominal"
-              className="glass rounded-3xl p-6 mt-5 scroll-mt-24"
-            >
+            <div className="glass rounded-3xl p-6 mt-5">
               <div className="flex items-center gap-3">
-                <span className="h-7 w-7 rounded-full bg-[#FF6A00] text-white grid place-items-center text-xs font-bold">
-                  2
-                </span>
+                <span className="h-7 w-7 rounded-full bg-[#FF6A00] text-white grid place-items-center text-xs font-bold">2</span>
                 <h2 className="text-lg font-bold">Pilih nominal</h2>
               </div>
               <div className="mt-5 grid gap-3 grid-cols-2 sm:grid-cols-3">
@@ -377,59 +393,27 @@ export function TopUpClient({ game, pricing }: Props) {
                   >
                     {p.badge && (
                       <span className="absolute -top-2 right-3 rounded-full bg-[#FF6A00] px-2 py-0.5 text-[10px] font-bold text-black">
-                        {p.badge === "terlaris"
-                          ? "POPULER"
-                          : p.badge.toUpperCase()}
+                        {p.badge === "terlaris" ? "POPULER" : p.badge.toUpperCase()}
                       </span>
                     )}
-                    <p className="font-['Archivo'] text-base font-bold">
-                      {p.nominal_label}
-                    </p>
-                    <p className="mt-2 text-sm font-semibold text-[#FF6A00]">
-                      {fmt(p.price)}
-                    </p>
+                    <p className="font-['Archivo'] text-base font-bold">{p.nominal_label}</p>
+                    <p className="mt-2 text-sm font-semibold text-[#FF6A00]">{fmt(p.price)}</p>
                   </button>
                 ))}
               </div>
-              <p className="mt-4 text-xs text-[#9C9791]">
-                Harga sudah final. Tidak ada biaya admin tambahan di akhir.
-              </p>
-            </div>
-
-            {/* Step 3 */}
-            <div className="glass rounded-3xl p-6 mt-5">
-              <div className="flex items-center gap-3">
-                <span className="h-7 w-7 rounded-full bg-[#FF6A00] text-white grid place-items-center text-xs font-bold">
-                  3
-                </span>
-                <h2 className="text-lg font-bold">Metode pembayaran</h2>
-              </div>
-              <div className="mt-5 grid grid-cols-2 sm:grid-cols-4 gap-3 text-sm font-semibold">
-                {PAYMENT_METHODS.map((m) => (
-                  <div
-                    key={m}
-                    className="rounded-xl border border-white/10 px-3 py-3 text-center"
-                  >
-                    {m}
-                  </div>
-                ))}
-              </div>
+              <p className="mt-4 text-xs text-[#9C9791]">Harga sudah final. Tidak ada biaya admin tambahan di akhir.</p>
             </div>
           </div>
 
-          {/* Desktop Summary Sidebar */}
+          {/* Sidebar */}
           <aside className="glass rounded-3xl p-6 lg:sticky lg:top-24">
-            <p className="text-xs font-bold tracking-widest text-[#9C9791]">
-              RINGKASAN PESANAN
-            </p>
+            <p className="text-xs font-bold tracking-widest text-[#9C9791]">RINGKASAN PESANAN</p>
             <div className="mt-4 flex items-center gap-3">
               <img
                 src={game.icon_url}
                 alt={game.name}
                 className={`h-11 w-11 rounded-lg object-cover ${
-                  game.slug === "call-of-duty-mobile"
-                    ? "shrink-0 object-contain logo-plate"
-                    : ""
+                  game.slug === "call-of-duty-mobile" ? "shrink-0 object-contain logo-plate" : ""
                 }`}
               />
               <div>
@@ -440,23 +424,17 @@ export function TopUpClient({ game, pricing }: Props) {
             <dl className="mt-5 space-y-2.5 text-sm">
               <div className="flex justify-between gap-3">
                 <dt className="text-[#9C9791]">{game.user_id_label}</dt>
-                <dd className="font-semibold text-right">
-                  {userId.trim() || "\u2014"}
-                </dd>
+                <dd className="font-semibold text-right">{userId.trim() || "\u2014"}</dd>
               </div>
               {!game.hide_server_id && (
                 <div className="flex justify-between gap-3">
                   <dt className="text-[#9C9791]">{game.server_id_label}</dt>
-                  <dd className="font-semibold text-right">
-                    {serverId.trim() || "\u2014"}
-                  </dd>
+                  <dd className="font-semibold text-right">{serverId.trim() || "\u2014"}</dd>
                 </div>
               )}
               <div className="flex justify-between gap-3">
                 <dt className="text-[#9C9791]">Nominal</dt>
-                <dd className="font-semibold text-right">
-                  {selected?.nominal_label || "\u2014"}
-                </dd>
+                <dd className="font-semibold text-right">{selected?.nominal_label || "\u2014"}</dd>
               </div>
             </dl>
             <div className="mt-5 pt-4 border-t border-white/10 flex items-end justify-between">
@@ -466,16 +444,13 @@ export function TopUpClient({ game, pricing }: Props) {
               </span>
             </div>
             <button
-              onClick={handleBuy}
-              className="btn-primary mt-5 w-full rounded-2xl py-3.5 text-sm font-bold"
+              onClick={handlePay}
+              className="btn-primary mt-5 w-full rounded-2xl py-3.5 text-sm font-bold relative z-10"
             >
-              Lanjut ke Pembayaran
+              Bayar Sekarang
             </button>
             {note && (
-              <p
-                className="mt-3 text-xs text-center"
-                style={{ color: noteColor || "#9C9791" }}
-              >
+              <p className="mt-3 text-xs text-center" style={{ color: noteColor || "#9C9791" }}>
                 {note}
               </p>
             )}
