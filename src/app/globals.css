@@ -1,0 +1,181 @@
+@import "tailwindcss";
+
+@theme {
+  --font-archivo: "Archivo", system-ui, sans-serif;
+  --font-plus-jakarta: "Plus Jakarta Sans", system-ui, sans-serif;
+  --color-ink: #0A0A0A;
+  --color-ink-2: #141414;
+  --color-brand: #FF6A00;
+  --color-brand-hover: #FF8A2B;
+  --color-text: #F5F3F0;
+  --color-muted: #9C9791;
+  --color-line: rgba(255, 255, 255, 0.10);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+/* Glass morphism card */
+.glass {
+  background: #111111;
+  border: 1px solid var(--color-line);
+}
+
+/* Primary CTA button */
+.btn-primary {
+  background: var(--color-brand);
+  color: #FFFFFF;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+.btn-primary:hover {
+  background: var(--color-brand-hover);
+  transform: translateY(-1px);
+}
+
+/* Card hover effect */
+.card-hover {
+  transition: transform 0.22s ease, border-color 0.22s ease, background 0.22s ease;
+}
+.card-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(255, 106, 0, 0.6);
+  background: #161616;
+}
+
+/* Grid background pattern */
+.grid-bg {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+  background-size: 64px 64px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, #000 40%, transparent 100%);
+}
+
+/* Aurora glow animation */
+.aurora {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  opacity: 0.5;
+  pointer-events: none;
+  animation: drift 16s ease-in-out infinite alternate;
+}
+@keyframes drift {
+  from { transform: translate3d(0, 0, 0) scale(1); }
+  to { transform: translate3d(4%, -6%, 0) scale(1.14); }
+}
+
+/* Grain overlay */
+.grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.05;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* CTA glow */
+.cta-glow {
+  position: relative;
+  box-shadow: 0 10px 34px -10px rgba(255, 106, 0, 0.75);
+}
+.cta-glow:hover {
+  box-shadow: 0 14px 40px -8px rgba(255, 106, 0, 0.95);
+}
+
+/* Panel */
+.panel {
+  background: linear-gradient(160deg, #151515 0%, #0E0E0E 100%);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: 0 40px 90px -50px rgba(0, 0, 0, 0.95);
+}
+
+/* Orbit float */
+.orbit {
+  animation: orbit 9s ease-in-out infinite alternate;
+}
+@keyframes orbit {
+  from { transform: translateY(0); }
+  to { transform: translateY(-10px); }
+}
+
+/* Tick border */
+.tick {
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+/* Marquee */
+.marquee {
+  animation: slide 26s linear infinite;
+}
+@keyframes slide {
+  from { transform: translateX(0); }
+  to { transform: translateX(-50%); }
+}
+
+/* Hero oversized type */
+.h1-xl {
+  font-size: clamp(2.75rem, 7.4vw, 5.75rem);
+  line-height: 0.94;
+  letter-spacing: -0.04em;
+}
+
+/* Denomination radio */
+.denom {
+  cursor: pointer;
+}
+.denom input {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+}
+.denom input:checked + .denom-box {
+  border-color: var(--color-brand);
+  background: rgba(255, 106, 0, 0.10);
+}
+.denom input:focus-visible + .denom-box {
+  outline: 2px solid var(--color-brand);
+  outline-offset: 2px;
+}
+
+/* Logo plate (white bg for dark logos) */
+.logo-plate {
+  background: #FFFFFF;
+  padding: 0.35rem;
+}
+
+/* Avatar stack */
+.avatar-stack img {
+  border: 2px solid #0A0A0A;
+}
+
+/* Reveal animation */
+.reveal {
+  opacity: 1;
+  transform: none;
+}
+.reveal.in {
+  animation: revealIn 0.7s ease backwards;
+}
+@keyframes revealIn {
+  from { transform: translateY(18px); }
+  to { transform: none; }
+}
+
+@media print {
+  .reveal.in {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reveal.in { animation: none; }
+  .marquee { animation: none; }
+  .aurora { animation: none; }
+  .orbit { animation: none; }
+}
